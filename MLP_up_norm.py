@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[96]:
+# In[40]:
 
 
 import os
@@ -21,7 +21,7 @@ from sklearn.model_selection import KFold,train_test_split
 from sklearn.metrics import accuracy_score
 
 
-# In[1]:
+# In[41]:
 
 
 # Set directory & stick random seed for evaluation
@@ -43,7 +43,7 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-# In[98]:
+# In[42]:
 
 
 # Load Raw data
@@ -54,7 +54,7 @@ train_df = train_df.sample(frac=1).reset_index(drop=True)
 test = pd.read_csv(os.path.join(WORKING_DIR,'test.csv')).drop('id',axis=1)
 
 
-# In[99]:
+# In[43]:
 
 
 # train dataset
@@ -64,15 +64,15 @@ if mode=='basic':
     testset = torch.FloatTensor(test.to_numpy()).cuda()
 else:    
     target = train_df['target']
-    train = train.drop('target',axis=1)
-    train = (train_df - train_df.mean()) / train_df.std()
+    train = train_df.drop('target',axis=1)
+    train = (train - train.mean()) / train.std()
     
     
     testset = (test - test.mean()) / test.std()
     testset = torch.FloatTensor(testset.to_numpy()).cuda()
 
 
-# In[100]:
+# In[45]:
 
 
 # Train parameter
@@ -81,7 +81,7 @@ EPOCH = 500
 BATCH_SIZE = 4
 
 
-# In[102]:
+# In[46]:
 
 
 def timer(start_time=None):
@@ -96,7 +96,7 @@ def timer(start_time=None):
 
 # # Data Split
 
-# In[103]:
+# In[47]:
 
 
 X_train,X_valid,y_train,y_valid = train_test_split(train,target,test_size=.2,
@@ -104,7 +104,7 @@ X_train,X_valid,y_train,y_valid = train_test_split(train,target,test_size=.2,
                                                    stratify=target)
 
 
-# In[105]:
+# In[48]:
 
 
 len(X_train), len(X_valid)
@@ -112,7 +112,7 @@ len(X_train), len(X_valid)
 
 # # DataSet
 
-# In[106]:
+# In[49]:
 
 
 class hand_dataset(Dataset):
@@ -127,21 +127,21 @@ class hand_dataset(Dataset):
         return len(self.X_data)
 
 
-# In[107]:
+# In[50]:
 
 
 trainset = hand_dataset(torch.FloatTensor(X_train.to_numpy()),torch.LongTensor(y_train.to_numpy()))
 validset = hand_dataset(torch.FloatTensor(X_valid.to_numpy()),torch.LongTensor(y_valid.to_numpy()))
 
 
-# In[108]:
+# In[51]:
 
 
 train_loader = DataLoader(trainset, batch_size = BATCH_SIZE, shuffle=True)
 valid_loader = DataLoader(validset, batch_size = BATCH_SIZE, shuffle=False)
 
 
-# In[111]:
+# In[53]:
 
 
 if debug:
@@ -153,7 +153,7 @@ if debug:
 
 # # Model Structure & Load
 
-# In[112]:
+# In[54]:
 
 
 class hand_model(nn.Module):
@@ -192,13 +192,13 @@ class hand_model(nn.Module):
         return x
 
 
-# In[113]:
+# In[55]:
 
 
 model = hand_model(num_feature=32, num_classes=4).cuda()
 
 
-# In[114]:
+# In[56]:
 
 
 print(model)
@@ -206,7 +206,7 @@ print(model)
 
 # # Train Function
 
-# In[2]:
+# In[57]:
 
 
 def train(train_loader, valid_loader,verbose):
@@ -282,7 +282,7 @@ def train(train_loader, valid_loader,verbose):
                 
 
 
-# In[3]:
+# In[58]:
 
 
 criterion = nn.CrossEntropyLoss()
@@ -290,7 +290,7 @@ optimizer = optim.Adam(model.parameters(),lr=0.0000001)
 scheduler = optim.lr_scheduler.OneCycleLR(optimizer,max_lr=0.01,epochs=EPOCH, steps_per_epoch=len(train_loader))
 
 
-# In[4]:
+# In[59]:
 
 
 train(train_loader,valid_loader,verbose=1)
