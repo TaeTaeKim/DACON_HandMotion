@@ -21,14 +21,14 @@ from sklearn.model_selection import KFold,train_test_split
 from sklearn.metrics import accuracy_score
 
 
-# In[110]:
+# In[1]:
 
 
 # Set directory & stick random seed for evaluation
 WORKING_DIR = '/USER/DACON'
 
-Trial_name = "Upsample_mlp_basic"
-mode = "basic" # 정규화된 데이터로 할 것인지 일반 데이터로 할것인지
+Trial_name = "Upsample_mlp_norm"
+mode = "norm" # 정규화된 데이터로 할 것인지 일반 데이터로 할것인지
 debug = False
 
 RANDOM_SEED = 1001
@@ -206,7 +206,7 @@ print(model)
 
 # # Train Function
 
-# In[115]:
+# In[2]:
 
 
 def train(train_loader, valid_loader,verbose):
@@ -282,7 +282,7 @@ def train(train_loader, valid_loader,verbose):
                 
 
 
-# In[116]:
+# In[3]:
 
 
 criterion = nn.CrossEntropyLoss()
@@ -290,7 +290,7 @@ optimizer = optim.Adam(model.parameters(),lr=0.0000001)
 scheduler = optim.lr_scheduler.OneCycleLR(optimizer,max_lr=0.01,epochs=EPOCH, steps_per_epoch=len(train_loader))
 
 
-# In[123]:
+# In[4]:
 
 
 train(train_loader,valid_loader,verbose=1)

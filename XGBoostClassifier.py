@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[29]:
+# In[2]:
 
 
 import os
@@ -22,7 +22,7 @@ import warnings
 warnings.simplefilter('ignore')
 
 
-# In[5]:
+# In[3]:
 
 
 # Set directory & stick random seed for evaluation
@@ -35,7 +35,7 @@ RANDOM_SEED = 1001
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 
-# In[6]:
+# In[4]:
 
 
 # Load Raw data
@@ -43,14 +43,14 @@ train = pd.read_csv(os.path.join(WORKING_DIR,'train.csv')).drop('id',axis=1)
 test = pd.read_csv(os.path.join(WORKING_DIR,'test.csv')).drop('id',axis=1)
 
 
-# In[8]:
+# In[5]:
 
 
 dataset = train.drop('target',axis=1)
 target = train['target']
 
 
-# In[9]:
+# In[6]:
 
 
 # data normalization
@@ -64,7 +64,7 @@ norm_train['target'] = train['target']
 norm_test = (test - test.mean()) / test.std()
 
 
-# In[96]:
+# In[7]:
 
 
 def timer(start_time=None):
@@ -79,7 +79,7 @@ def timer(start_time=None):
 
 # # Data Split
 
-# In[10]:
+# In[8]:
 
 
 X_train,X_valid,y_train,y_valid = train_test_split(dataset,target,
@@ -88,21 +88,7 @@ X_train,X_valid,y_train,y_valid = train_test_split(dataset,target,
 
 # # Xgboost 파라미터 조정
 
-# In[ ]:
-
-
-param_grid = {
-    'learning_rate':[.05,.01,.0001],
-    'gamma':[0,0.1,0.2,.5],
-    'max_depth': [3,5,7,10,20],
-    'min_child_weight':[0,1,2],
-    'subsample': [0.5,1],
-    'colsample_bytree':[0.5,1],
-    "n_estimators":[100,300,500,800,1000,1200,1400]
-             }
-
-
-# In[33]:
+# In[10]:
 
 
 model = XGBClassifier(random_state =RANDOM_SEED, eval_metric='mlogloss',
@@ -122,7 +108,7 @@ param_grid = {
     "n_estimators":[100,300,500,800,1000,1200,1400]
              }
 
-grid_search = GridSearchCV(model, param_grid=param_grid,cv=cv,scoring='accuracy')
+grid_search = GridSearchCV(model, param_grid=param_grid,cv=cv,scoring='accuracy',verbose=3)
 result = grid_search.fit(dataset,target)
 
 
