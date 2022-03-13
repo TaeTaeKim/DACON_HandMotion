@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[28]:
 
 
 import os
@@ -15,56 +15,61 @@ import xgboost
 from xgboost import XGBClassifier
 
 import sklearn
-from sklearn.model_selection import KFold,train_test_split,GridSearchCV,RepeatedStratifiedKFold
+from sklearn.model_selection import KFold,train_test_split,GridSearchCV,StratifiedKFold
 from sklearn.metrics import accuracy_score
 
 import warnings
 warnings.simplefilter('ignore')
 
 
-# In[3]:
+# In[18]:
 
 
 # Set directory & stick random seed for evaluation
 WORKING_DIR = '/USER/DACON'
 
-Trial_name = "mlp_scheduler_3rd"
+Trial_name = "xgb_upsample_basic"
+mode = "basic"
+Upsample = True
 
 RANDOM_SEED = 1001
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 
-# In[4]:
+# In[ ]:
+
+
+print(f'Start training xgboost model {Trial_name} mode : [{mode}], Upsample : [{str(Upsample)}]')
+
+
+# In[19]:
 
 
 # Load Raw data
-train = pd.read_csv(os.path.join(WORKING_DIR,'train.csv')).drop('id',axis=1)
+train_df = pd.read_csv(os.path.join(WORKING_DIR,'train.csv')).drop('id',axis=1)
+if Upsample:
+    train_df = pd.concat([train_df,pd.read_csv('Upsample_train.csv')],axis=0,ignore_index=True)
+train_df = train_df.sample(frac=1).reset_index(drop=True)
 test = pd.read_csv(os.path.join(WORKING_DIR,'test.csv')).drop('id',axis=1)
 
 
-# In[5]:
+# In[20]:
 
 
-dataset = train.drop('target',axis=1)
-target = train['target']
+if mode=='basic':    
+    target = train_df['target']
+    train = train_df.drop('target',axis=1)
+else:    
+    target = train_df['target']
+    train = train_df.drop('target',axis=1)
+    train = (train - train.mean()) / train.std()
+    
+    
+    test = (test - test.mean()) / test.std()
 
 
-# In[6]:
-
-
-# data normalization
-
-#train data
-norm_train = train.drop('target',axis=1)
-norm_train = (train - train.mean()) / train.std()
-norm_train['target'] = train['target']
-
-# test data
-norm_test = (test - test.mean()) / test.std()
-
-
-# In[7]:
+# In[21]:
 
 
 def timer(start_time=None):
@@ -79,16 +84,16 @@ def timer(start_time=None):
 
 # # Data Split
 
-# In[8]:
+# In[ ]:
 
 
-X_train,X_valid,y_train,y_valid = train_test_split(dataset,target,
-                                                  test_size=.2, random_state=RANDOM_SEED)
+#X_train,X_valid,y_train,y_valid = train_test_split(train,target,
+#                                                  test_size=.2, random_state=RANDOM_SEED)
 
 
 # # Xgboost 파라미터 조정
 
-# In[10]:
+# In[30]:
 
 
 model = XGBClassifier(random_state =RANDOM_SEED, eval_metric='mlogloss',
@@ -96,7 +101,7 @@ model = XGBClassifier(random_state =RANDOM_SEED, eval_metric='mlogloss',
                       tree_method='gpu_hist',predictor='gpu_predictor'
                      )
 
-cv = RepeatedStratifiedKFold(random_state=RANDOM_SEED,n_splits=2)
+cv = StratifiedKFold(n_splits=3)
 
 param_grid = {
     'learning_rate':[.05,.01,.0001],
@@ -109,7 +114,7 @@ param_grid = {
              }
 
 grid_search = GridSearchCV(model, param_grid=param_grid,cv=cv,scoring='accuracy',verbose=3)
-result = grid_search.fit(dataset,target)
+result = grid_search.fit(train,target)
 
 
 # In[34]:
@@ -122,13 +127,13 @@ print(result.best_score_)
 
 
 optim_model = result.best_estimator_
-optim_model.fit(dataset,target)
+optim_model.fit(train,target)
 
 
 # In[36]:
 
 
-with open('./weight/xgboost_model.pkl','wb') as file:
+with open(f'./weight/{Trial_name}.pkl','wb') as file:
     pickle.dump(optim_model,file)
 
 
@@ -136,7 +141,6 @@ with open('./weight/xgboost_model.pkl','wb') as file:
 
 
 y_pred = optim_model.predict(test)
-print(y_pred.shape)
 
 
 # In[40]:
@@ -144,7 +148,7 @@ print(y_pred.shape)
 
 submit = pd.read_csv('./sample_submission.csv')
 submit['target']= y_pred
-submit.to_csv(f'./result/xgboost_submit.csv',index=False)
+submit.to_csv(f'./result/{Trial_name}_submission.csv',index=False)
 
 
 # In[ ]:
